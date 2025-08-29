@@ -1,5 +1,5 @@
 version = 1
-revision = 1
+revision = 3
 requires-python = ">=3.10, <3.13"
 resolution-markers = [
     "python_full_version >= '3.12' and sys_platform == 'darwin'",
@@ -1184,12 +1184,6 @@ sdist = { url = "https://mirrors.aliyun.com/pypi/packages/e3/9d/348ed92110ba5f9b
 wheels = [
     { url = "https://mirrors.aliyun.com/pypi/packages/eb/62/eb8157afb21bd229c864521c1ab4fa8e9b4f1b06bafdd8c4668a7a31b5dd/datasets-4.0.0-py3-none-any.whl", hash = "sha256:7ef95e62025fd122882dbce6cb904c8cd3fbc829de6669a5eb939c77d50e203d" },
 ]
-
-[[package]]
-name = "datrie"
-version = "0.8.2"
-source = { registry = "https://mirrors.aliyun.com/pypi/simple" }
-sdist = { url = "https://mirrors.aliyun.com/pypi/packages/9d/fe/db74bd405d515f06657f11ad529878fd389576dca4812bea6f98d9b31574/datrie-0.8.2.tar.gz", hash = "sha256:525b08f638d5cf6115df6ccd818e5a01298cd230b2dac91c8ff2e6499d18765d" }
 
 [[package]]
 name = "debugpy"
@@ -4844,12 +4838,6 @@ wheels = [
 ]
 
 [[package]]
-name = "pyicu"
-version = "2.15.2"
-source = { registry = "https://mirrors.aliyun.com/pypi/simple" }
-sdist = { url = "https://mirrors.aliyun.com/pypi/packages/9f/57/9db810ab75133a1c87ac2e327fb59199d78d233f575fbb63bfd3492b769c/pyicu-2.15.2.tar.gz", hash = "sha256:561e77eedff17cec6839f26211f7a5ce3c071b776e8a0ec9d1207f46cbce598f" }
-
-[[package]]
 name = "pyjwt"
 version = "2.8.0"
 source = { registry = "https://mirrors.aliyun.com/pypi/simple" }
@@ -5290,7 +5278,6 @@ dependencies = [
     { name = "cohere" },
     { name = "crawl4ai" },
     { name = "dashscope" },
-    { name = "datrie" },
     { name = "debugpy" },
     { name = "deepl" },
     { name = "demjson3" },
@@ -5348,7 +5335,6 @@ dependencies = [
     { name = "psycopg2-binary" },
     { name = "pyclipper" },
     { name = "pycryptodomex" },
-    { name = "pyicu" },
     { name = "pymysql" },
     { name = "pyodbc" },
     { name = "pypdf" },
@@ -5442,7 +5428,6 @@ requires-dist = [
     { name = "cohere", specifier = "==5.6.2" },
     { name = "crawl4ai", specifier = ">=0.3.8" },
     { name = "dashscope", specifier = "==1.20.11" },
-    { name = "datrie", specifier = "==0.8.2" },
     { name = "debugpy", specifier = ">=1.8.13" },
     { name = "deepl", specifier = "==1.18.0" },
     { name = "demjson3", specifier = "==3.0.6" },
@@ -5503,7 +5488,6 @@ requires-dist = [
     { name = "psycopg2-binary", specifier = "==2.9.9" },
     { name = "pyclipper", specifier = "==1.3.0.post5" },
     { name = "pycryptodomex", specifier = "==3.20.0" },
-    { name = "pyicu", specifier = ">=2.13.1,<3.0.0" },
     { name = "pymysql", specifier = ">=1.1.1,<2.0.0" },
     { name = "pyodbc", specifier = ">=5.2.0,<6.0.0" },
     { name = "pypdf", specifier = "==6.0.0" },

@@ -4,6 +4,8 @@
 # Gracefully stops all RAGFlow services
 #
 
+set -euo pipefail
+
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -13,7 +15,7 @@ NC='\033[0m' # No Color
 
 echo -e "${BLUE}=========================================="
 echo "RAGFlow Stop Script"
-echo "==========================================${NC}"
+echo -e "==========================================${NC}"
 echo ""
 
 # Stop backend processes

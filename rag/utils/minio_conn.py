@@ -85,6 +85,10 @@ class RAGFlowMinio:
     def get(self, bucket, filename):
         for _ in range(1):
             try:
+                # Ensure bucket exists before attempting to get object
+                if not self.conn.bucket_exists(bucket):
+                    logging.error(f"Bucket {bucket} does not exist, cannot retrieve {filename}")
+                    return None
                 r = self.conn.get_object(bucket, filename)
                 return r.read()
             except Exception:

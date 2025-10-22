@@ -7,54 +7,90 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 RAGFlow is an open-source RAG (Retrieval-Augmented Generation) engine based on deep document understanding. It combines LLMs to deliver truthful Q&A capabilities with citations from complex formatted data.
 
 **Tech Stack:**
-- Backend: Python 3.10-3.12, Flask 3.0.3
+- Backend: Python 3.12, Flask 3.0.3
 - Frontend: React 18.2.0, TypeScript, UMI 4.0.90, Ant Design 5.12.7
-- Databases: Elasticsearch/Infinity/OpenSearch (vector), MySQL (relational), Redis (cache)
-- Infrastructure: Docker, Docker Compose, Kubernetes (Helm)
+- Databases: Elasticsearch (vector), MySQL (relational), Redis (cache), MinIO (object storage)
+- Infrastructure: WSL2 Ubuntu 24.04, systemd services, native GPU support
 
-## Development Commands
+## Local Development Setup
 
-### Backend
+This project runs natively on WSL2 without Docker, with full GPU acceleration support.
+
+### Prerequisites
+- WSL2 with Ubuntu 24.04
+- NVIDIA GPU with CUDA support
+- Python 3.12+
+- Node.js and npm
+
+### Quick Start
+
+**Start the application:**
+```bash
+bash start_ragflow.sh
+```
+
+**Access the UI:**
+Open http://localhost:9222 in your browser.
+
+**Stop the application:**
+```bash
+bash stop_ragflow.sh
+```
+
+### Development Commands
+
+#### Backend
 ```bash
 # Setup (first time)
 pipx install uv pre-commit
-uv sync --python 3.10 --all-extras
-uv run download_deps.py
+uv sync --python 3.12 --all-extras
+python download_deps.py
 pre-commit install
 
-# Start dependent services
-docker compose -f docker/docker-compose-base.yml up -d
+# Infrastructure services (systemd)
+sudo systemctl status mysql redis-server minio elasticsearch
+sudo systemctl start mysql redis-server minio elasticsearch
 
-# Run backend
+# Run backend (manual)
 source .venv/bin/activate
 export PYTHONPATH=$(pwd)
-bash docker/launch_backend_service.sh
+bash launch_backend_service.sh
 
 # Testing
 pytest  # Run all tests
 pytest api/test/test_http_api.py  # Run specific test file
 ```
 
-### Frontend
+#### Frontend
 ```bash
 cd web
 npm install        # Install dependencies
-npm run dev        # Development server (port 3000)
+npm run dev        # Development server (port 9222)
 npm run build      # Production build
 npm run lint       # Run ESLint
 npm test          # Run Jest tests
 ```
 
-### Docker Operations
+### Infrastructure Services
+
+All services run as systemd services:
+
+| Service       | Port | Credentials                    |
+|---------------|------|--------------------------------|
+| MySQL         | 5455 | root / infini_rag_flow        |
+| Redis         | 6379 | password: infini_rag_flow     |
+| MinIO         | 9000 | rag_flow / infini_rag_flow    |
+| Elasticsearch | 1200 | elastic / infini_rag_flow     |
+
+**Check service status:**
 ```bash
-# Full stack deployment
-docker compose -f docker-compose.yml up -d
+sudo systemctl status mysql redis-server minio elasticsearch
+```
 
-# GPU-enabled deployment
-docker compose -f docker-compose-gpu.yml up -d
-
-# Development base services only
-docker compose -f docker/docker-compose-base.yml up -d
+**View service logs:**
+```bash
+sudo journalctl -u mysql -f
+sudo journalctl -u redis-server -f
 ```
 
 ## Architecture
@@ -79,8 +115,7 @@ ragflow/
 │   ├── parser/    # Multi-format parsers
 │   └── vision/    # OCR and layout recognition
 ├── agent/         # Agentic workflow components
-├── graphrag/      # Graph-based RAG
-└── docker/        # Docker configurations
+└── graphrag/      # Graph-based RAG
 ```
 
 ### Key Components
@@ -112,16 +147,18 @@ ragflow/
 
 ## Configuration
 
-### Environment Variables
-- Backend: `docker/.env` for Docker deployment
-- Service config: `docker/service_conf.yaml.template`
-- Frontend: Environment-specific configs in `web/`
+### Service Configuration
+- Main config: `conf/service_conf.yaml` - RAGFlow service configuration
+- Frontend env: `web/.env` - Frontend environment variables
+- Infrastructure: systemd service configs in `/etc/systemd/system/`
 
 ### Key Files
 - `pyproject.toml` - Python dependencies and project config
 - `web/package.json` - Frontend dependencies and scripts
-- `docker-compose.yml` - Production deployment config
-- `docker/docker-compose-base.yml` - Development services
+- `conf/service_conf.yaml` - Service configuration
+- `launch_backend_service.sh` - Backend startup script
+- `start_ragflow.sh` - Automated startup script
+- `stop_ragflow.sh` - Graceful shutdown script
 
 ## Testing Strategy
 
@@ -143,9 +180,10 @@ ragflow/
 3. **API Development**: New endpoints go in `api/apps/` with corresponding tests
 4. **Frontend Routes**: Defined in `web/src/pages/` following UMI conventions
 5. **Database Migrations**: Handle schema changes in `api/db/`
-6. **Docker Development**: Use base services for local development to save resources
+6. **GPU Development**: Monitor GPU usage with `nvidia-smi` or `watch -n 1 nvidia-smi`
 7. **LLM Integration**: Add new providers in `rag/llm/` following factory pattern
 8. **Document Parsers**: Extend parsers in `deepdoc/parser/` for new formats
+9. **Local Setup**: See `README_LOCAL_SETUP.md` for complete setup documentation
 
 ## Common Tasks
 

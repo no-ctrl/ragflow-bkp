@@ -62,7 +62,7 @@ Open a terminal and run:
 cd ~/projects/ragflow
 source .venv/bin/activate
 export PYTHONPATH=$(pwd)
-bash docker/launch_backend_service.sh
+bash launch_backend_service.sh
 ```
 
 You should see:

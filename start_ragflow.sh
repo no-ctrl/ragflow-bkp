@@ -4,7 +4,7 @@
 # Starts all required services and launches RAGFlow with GPU support
 #
 
-set -e
+set -euo pipefail
 
 # Colors for output
 RED='\033[0;31m'
@@ -15,11 +15,13 @@ NC='\033[0m' # No Color
 
 echo -e "${BLUE}=========================================="
 echo "RAGFlow Startup Script"
-echo "==========================================${NC}"
+echo -e "==========================================${NC}"
 echo ""
 
 # Get the directory where this script is located
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+echo -e "${GREEN}Script directory: $SCRIPT_DIR"
+echo ""
 cd "$SCRIPT_DIR"
 
 # Function to check if a service is running
@@ -154,7 +156,7 @@ echo ""
 echo -e "${BLUE}Step 3: Preparing Python environment${NC}"
 echo ""
 
-if [ -n "$CONDA_DEFAULT_ENV" ]; then
+if [ -n "${CONDA_DEFAULT_ENV:-}" ]; then
     echo -e "${YELLOW}Conda environment detected: $CONDA_DEFAULT_ENV${NC}"
     echo -e "${YELLOW}Deactivating conda to use uv virtual environment...${NC}"
     # Note: conda deactivate doesn't work in scripts, so we'll warn the user
@@ -209,7 +211,7 @@ if pgrep -f "npm.*dev" >/dev/null 2>&1 || lsof -ti:9222 >/dev/null 2>&1; then
 fi
 
 # Step 5: Start backend
-if [ "$BACKEND_ALREADY_RUNNING" != true ]; then
+if [ "${BACKEND_ALREADY_RUNNING:-}" != true ]; then
     echo ""
     echo -e "${BLUE}Step 5: Starting RAGFlow backend${NC}"
     echo ""
@@ -220,7 +222,7 @@ if [ "$BACKEND_ALREADY_RUNNING" != true ]; then
     # Start backend in background using nohup
     cd "$SCRIPT_DIR"
     export PYTHONPATH="$SCRIPT_DIR"
-    nohup bash docker/launch_backend_service.sh > /tmp/ragflow_backend_startup.log 2>&1 &
+    nohup bash launch_backend_service.sh > /tmp/ragflow_backend_startup.log 2>&1 &
     BACKEND_PID=$!
 
     echo "Backend starting with PID: $BACKEND_PID"
@@ -245,46 +247,36 @@ else
     echo -e "${BLUE}Step 5: Backend already running, skipping...${NC}"
 fi
 
-# Step 6: Start frontend
-if [ "$FRONTEND_ALREADY_RUNNING" != true ]; then
+# Step 6: Frontend (manual start required)
+echo ""
+echo -e "${BLUE}Step 6: Frontend Development Server${NC}"
+echo ""
+
+if lsof -Pi :9222 -sTCP:LISTEN -t >/dev/null 2>&1; then
+    echo -e "${GREEN}✓ Frontend is already running on port 9222${NC}"
+    FRONTEND_ALREADY_RUNNING=true
+else
+    echo -e "${YELLOW}⚠ Frontend must be started manually in a separate terminal${NC}"
     echo ""
-    echo -e "${BLUE}Step 6: Starting frontend development server${NC}"
+    echo -e "${BLUE}Why manual start is required:${NC}"
+    echo "  The frontend build process requires an interactive terminal for proper"
+    echo "  compilation. Background startup causes esbuild deadlocks."
     echo ""
-    echo -e "${YELLOW}Frontend will start in the background...${NC}"
-    echo -e "${YELLOW}Logs: /tmp/ragflow_frontend.log${NC}"
+    echo -e "${BLUE}To start the frontend, open a new terminal and run:${NC}"
+    echo ""
+    echo -e "${GREEN}  cd $SCRIPT_DIR/web${NC}"
+    echo -e "${GREEN}  npm run dev${NC}"
+    echo ""
+    echo -e "${YELLOW}The frontend will be available at: http://localhost:9222${NC}"
+    echo -e "${YELLOW}Compilation takes 20-40 seconds on first run${NC}"
     echo ""
 
     cd "$SCRIPT_DIR/web"
-
-    # Check if node_modules exists
     if [ ! -d "node_modules" ]; then
-        echo -e "${YELLOW}node_modules not found. Running npm install...${NC}"
+        echo -e "${YELLOW}Installing frontend dependencies first...${NC}"
         npm install
+        echo ""
     fi
-
-    # Start frontend in background
-    nohup npm run dev > /tmp/ragflow_frontend.log 2>&1 &
-    FRONTEND_PID=$!
-
-    echo "Frontend starting with PID: $FRONTEND_PID"
-    echo "Waiting for frontend to start (15 seconds)..."
-
-    # Wait for frontend to start
-    for i in {1..15}; do
-        sleep 1
-        if lsof -Pi :9222 -sTCP:LISTEN -t >/dev/null 2>&1; then
-            echo -e "${GREEN}✓ Frontend started successfully!${NC}"
-            break
-        fi
-        if [ $i -eq 15 ]; then
-            echo -e "${RED}✗ Frontend may have failed to start. Check logs:${NC}"
-            echo "  tail -f /tmp/ragflow_frontend.log"
-            exit 1
-        fi
-    done
-else
-    echo ""
-    echo -e "${BLUE}Step 6: Frontend already running, skipping...${NC}"
 fi
 
 # Step 7: Verify GPU usage
@@ -314,25 +306,30 @@ echo -e "${GREEN}Application URL:${NC} http://localhost:9222"
 echo -e "${GREEN}Backend API:${NC}     http://127.0.0.1:9380"
 echo ""
 echo -e "${BLUE}Process Information:${NC}"
-if [ -n "$BACKEND_PID" ]; then
+if [ -n "${BACKEND_PID:-}" ]; then
     echo "  Backend PID: $BACKEND_PID"
 fi
-if [ -n "$FRONTEND_PID" ]; then
-    echo "  Frontend PID: $FRONTEND_PID"
+if [ "${FRONTEND_ALREADY_RUNNING:-}" = true ]; then
+    FRONTEND_PID=$(lsof -ti:9222 2>/dev/null || echo "")
+    if [ -n "$FRONTEND_PID" ]; then
+        echo "  Frontend PID: $FRONTEND_PID"
+    fi
 fi
 echo ""
 echo -e "${BLUE}Logs:${NC}"
 echo "  Backend:  $SCRIPT_DIR/logs/ragflow_server.log"
-echo "  Frontend: /tmp/ragflow_frontend.log"
 echo ""
 echo -e "${BLUE}To stop RAGFlow:${NC}"
-echo "  pkill -f ragflow_server.py"
-echo "  pkill -f task_executor.py"
-echo "  lsof -ti:9222 | xargs kill"
+echo "  Backend:  pkill -f ragflow_server.py && pkill -f task_executor.py"
+echo "  Frontend: Press Ctrl+C in the terminal running npm dev (or lsof -ti:9222 | xargs kill)"
 echo ""
-echo -e "${BLUE}To view logs in real-time:${NC}"
+echo -e "${BLUE}To view backend logs in real-time:${NC}"
 echo "  tail -f $SCRIPT_DIR/logs/ragflow_server.log"
-echo "  tail -f /tmp/ragflow_frontend.log"
 echo ""
-echo -e "${GREEN}Open your browser to http://localhost:9222 to access RAGFlow!${NC}"
+if [ "${FRONTEND_ALREADY_RUNNING:-}" != true ]; then
+    echo -e "${YELLOW}Remember to start the frontend in a separate terminal!${NC}"
+    echo -e "${GREEN}  cd $SCRIPT_DIR/web && npm run dev${NC}"
+    echo ""
+fi
+echo -e "${GREEN}Once frontend is running, open your browser to http://localhost:9222${NC}"
 echo ""

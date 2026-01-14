@@ -49,6 +49,17 @@ LOGS_DIR="$DATA_DIR/logs"
 echo -e "${GREEN}Data directory: $DATA_DIR${NC}"
 echo ""
 
+# Check if running as root or non-root
+if [ "$(id -u)" = "0" ]; then
+    echo -e "${GREEN}Running as root${NC}"
+    SUDO=""
+else
+    echo -e "${YELLOW}Running as non-root user ($(whoami))${NC}"
+    echo -e "${YELLOW}Some operations may require sudo privileges${NC}"
+    SUDO="sudo"
+fi
+echo ""
+
 # Create data directories
 mkdir -p "$MYSQL_DATA_DIR" "$REDIS_DATA_DIR" "$MINIO_DATA_DIR" "$ES_DATA_DIR" "$LOGS_DIR"
 
@@ -57,10 +68,10 @@ echo -e "${BLUE}Step 1: Installing system dependencies${NC}"
 echo ""
 
 # Update package list
-apt-get update
+$SUDO apt-get update
 
 # Install required packages
-apt-get install -y \
+$SUDO apt-get install -y \
     wget \
     curl \
     lsof \
@@ -83,8 +94,8 @@ echo -e "${BLUE}Step 2: Setting up MySQL${NC}"
 echo ""
 
 # Configure MySQL to use custom data directory and port
-mkdir -p /etc/mysql/mysql.conf.d
-cat > /etc/mysql/mysql.conf.d/ragflow.cnf <<EOF
+$SUDO mkdir -p /etc/mysql/mysql.conf.d
+$SUDO tee /etc/mysql/mysql.conf.d/ragflow.cnf > /dev/null <<EOF
 [mysqld]
 datadir = ${MYSQL_DATA_DIR}
 port = ${MYSQL_PORT}
@@ -100,7 +111,31 @@ EOF
 # Initialize MySQL if data directory is empty
 if [ ! -d "$MYSQL_DATA_DIR/mysql" ]; then
     echo "Initializing MySQL data directory..."
-    mysqld --initialize-insecure --user=root --datadir="$MYSQL_DATA_DIR"
+    
+    # Ensure data directory exists and has proper permissions
+    mkdir -p "$MYSQL_DATA_DIR" "$LOGS_DIR"
+    
+    # Detect if running as root or non-root user
+    if [ "$(id -u)" = "0" ]; then
+        # Running as root - use mysql user for security
+        echo "Running as root, initializing MySQL with mysql user..."
+        
+        # Ensure mysql user owns the data directory
+        chown -R mysql:mysql "$MYSQL_DATA_DIR" "$LOGS_DIR"
+        
+        # Initialize as mysql user with custom log file
+        mysqld --initialize-insecure --user=mysql --datadir="$MYSQL_DATA_DIR" \
+            --log-error="$LOGS_DIR/mysql-init.log"
+    else
+        # Running as non-root user - use current user
+        echo "Running as non-root user ($(whoami)), initializing MySQL with current user..."
+        
+        # Initialize without --user flag (uses current user) with custom log file
+        mysqld --initialize-insecure --datadir="$MYSQL_DATA_DIR" \
+            --log-error="$LOGS_DIR/mysql-init.log"
+    fi
+    
+    echo "MySQL initialization log: $LOGS_DIR/mysql-init.log"
 fi
 
 echo -e "${GREEN}✓ MySQL configured${NC}"
@@ -111,7 +146,7 @@ echo -e "${BLUE}Step 3: Setting up Redis${NC}"
 echo ""
 
 # Create Redis configuration
-cat > /etc/redis/redis-ragflow.conf <<EOF
+$SUDO tee /etc/redis/redis-ragflow.conf > /dev/null <<EOF
 bind 127.0.0.1
 port ${REDIS_PORT}
 requirepass ${REDIS_PASSWORD}
@@ -132,8 +167,8 @@ echo ""
 # Download MinIO if not present
 if [ ! -f /usr/local/bin/minio ]; then
     echo "Downloading MinIO..."
-    wget -q https://dl.min.io/server/minio/release/linux-amd64/minio -O /usr/local/bin/minio
-    chmod +x /usr/local/bin/minio
+    $SUDO wget -q https://dl.min.io/server/minio/release/linux-amd64/minio -O /usr/local/bin/minio
+    $SUDO chmod +x /usr/local/bin/minio
 fi
 
 echo -e "${GREEN}✓ MinIO installed${NC}"
@@ -149,12 +184,12 @@ if [ ! -d "$ES_INSTALL_DIR" ]; then
     cd /tmp
     wget -q "https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-${ELASTIC_VERSION}-linux-x86_64.tar.gz"
     tar -xzf "elasticsearch-${ELASTIC_VERSION}-linux-x86_64.tar.gz"
-    mv "elasticsearch-${ELASTIC_VERSION}" "$ES_INSTALL_DIR"
+    $SUDO mv "elasticsearch-${ELASTIC_VERSION}" "$ES_INSTALL_DIR"
     rm "elasticsearch-${ELASTIC_VERSION}-linux-x86_64.tar.gz"
 fi
 
 # Configure Elasticsearch
-cat > "$ES_INSTALL_DIR/config/elasticsearch.yml" <<EOF
+$SUDO tee "$ES_INSTALL_DIR/config/elasticsearch.yml" > /dev/null <<EOF
 cluster.name: ragflow-cluster
 node.name: node-1
 path.data: ${ES_DATA_DIR}
@@ -171,7 +206,7 @@ cluster.routing.allocation.disk.watermark.flood_stage: 2gb
 EOF
 
 # Configure JVM heap size
-cat > "$ES_INSTALL_DIR/config/jvm.options.d/heap.options" <<EOF
+$SUDO tee "$ES_INSTALL_DIR/config/jvm.options.d/heap.options" > /dev/null <<EOF
 -Xms2g
 -Xmx2g
 EOF
@@ -264,7 +299,7 @@ echo ""
 
 # Add host entries if not present
 if ! grep -q "es01" /etc/hosts; then
-    echo "127.0.0.1 es01 infinity mysql minio redis sandbox-executor-manager" >> /etc/hosts
+    $SUDO bash -c 'echo "127.0.0.1 es01 infinity mysql minio redis sandbox-executor-manager" >> /etc/hosts'
 fi
 
 echo -e "${GREEN}✓ Hosts configured${NC}"

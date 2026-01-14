@@ -39,7 +39,7 @@ fi
 
 # Clone the repository
 echo "Cloning from ${REPO_URL}..."
-git clone "${REPO_URL}"
+git clone "${REPO_URL}" "${REPO_NAME}"
 
 # Enter the repository directory
 cd "${REPO_NAME}"

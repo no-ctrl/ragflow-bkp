@@ -204,22 +204,29 @@ else
         
         # Set ownership if user exists and we can change ownership
         if id -u elasticsearch &>/dev/null; then
-            if chown -R elasticsearch:elasticsearch "$ES_INSTALL_DIR" "$ES_DATA_DIR" "$LOGS_DIR/elasticsearch" 2>/dev/null; then
+            # Try to set ownership of the installation directory (local storage, should succeed)
+            chown -R elasticsearch:elasticsearch "$ES_INSTALL_DIR" 2>/dev/null || true
+
+            # Try to set ownership of data directories (might fail on network volume)
+            if chown -R elasticsearch:elasticsearch "$ES_DATA_DIR" "$LOGS_DIR/elasticsearch" 2>/dev/null; then
                 echo "Successfully set ownership to elasticsearch user"
                 # Start Elasticsearch as elasticsearch user
                 su elasticsearch -s /bin/bash -c "$ES_INSTALL_DIR/bin/elasticsearch -d -p $PIDS_DIR/elasticsearch.pid" \
                     >> "$LOGS_DIR/elasticsearch.log" 2>&1
             else
-                echo -e "${YELLOW}Warning: Could not change ownership to elasticsearch user${NC}"
-                echo -e "${YELLOW}Starting Elasticsearch as root instead (common in containerized environments)${NC}"
-                # Start Elasticsearch directly if ownership change failed
-                # Export ES_JAVA_OPTS to allow running as root in containerized environments
-                export ES_JAVA_OPTS="-Des.insecure.allow.root=true"
-                "$ES_INSTALL_DIR/bin/elasticsearch" -d -p "$PIDS_DIR/elasticsearch.pid" \
+                echo -e "${YELLOW}Warning: Could not change ownership of data directories to elasticsearch user${NC}"
+                echo -e "${YELLOW}Setting permissions to 777 and running as elasticsearch user...${NC}"
+
+                # Make sure directories are writable by everyone (since we can't chown on network volume)
+                chmod -R 777 "$ES_DATA_DIR" "$LOGS_DIR/elasticsearch" 2>/dev/null || true
+
+                # Start Elasticsearch as elasticsearch user
+                su elasticsearch -s /bin/bash -c "$ES_INSTALL_DIR/bin/elasticsearch -d -p $PIDS_DIR/elasticsearch.pid" \
                     >> "$LOGS_DIR/elasticsearch.log" 2>&1
             fi
         else
-            # Start Elasticsearch directly if user creation failed
+            # Start Elasticsearch directly if user creation failed (last resort, will likely fail on ES 8.x)
+            echo -e "${YELLOW}Warning: elasticsearch user not found, attempting to run as root${NC}"
             # Export ES_JAVA_OPTS to allow running as root in containerized environments
             export ES_JAVA_OPTS="-Des.insecure.allow.root=true"
             "$ES_INSTALL_DIR/bin/elasticsearch" -d -p "$PIDS_DIR/elasticsearch.pid" \

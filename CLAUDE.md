@@ -37,7 +37,26 @@ Open http://localhost:9222 in your browser.
 bash stop_ragflow.sh
 ```
 
-### Development Commands
+## RunPod Deployment
+
+This project also supports deployment on RunPod using the `runpod/pytorch:2.4.0-py3.11-cuda12.4.1-devel-ubuntu22.04` image.
+
+### RunPod Quick Start
+
+```bash
+# Initial setup (run once)
+bash setup_runpod.sh
+
+# Start the application
+bash start_ragflow_runpod.sh
+
+# Stop the application
+bash stop_ragflow_runpod.sh
+```
+
+See [README_RUNPOD.md](README_RUNPOD.md) for the complete deployment guide.
+
+## Development Commands
 
 #### Backend
 ```bash

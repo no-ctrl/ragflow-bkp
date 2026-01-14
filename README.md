@@ -78,6 +78,8 @@ data.
 
 > **📝 Note for Local Development**: This repository now supports running RAGFlow locally on WSL2 without Docker, with full GPU acceleration. See [README_LOCAL_SETUP.md](README_LOCAL_SETUP.md) for the complete local setup guide and [START_RAGFLOW.md](START_RAGFLOW.md) for startup instructions.
 
+> **🚀 RunPod Deployment**: Deploy RAGFlow on RunPod with full GPU support using the `runpod/pytorch:2.4.0-py3.11-cuda12.4.1-devel-ubuntu22.04` image. See [README_RUNPOD.md](README_RUNPOD.md) for the complete deployment guide.
+
 ## 🎮 Demo
 
 Try our demo at [https://demo.ragflow.io](https://demo.ragflow.io).

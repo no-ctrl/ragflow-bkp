@@ -98,17 +98,27 @@ else
     
     # Determine which user to run MySQL as
     if [ "$(id -u)" = "0" ]; then
-        # Running as root - use mysql user for security
-        echo "Running as root, starting MySQL with mysql user..."
+        # Running as root - try to use mysql user for security
+        echo "Running as root, attempting to start MySQL with mysql user..."
         
-        # Set ownership if mysql user exists
+        # Try to set ownership if mysql user exists
+        MYSQL_USER=""
         if id -u mysql &>/dev/null; then
-            chown -R mysql:mysql "$MYSQL_DATA_DIR" "$LOGS_DIR" 2>/dev/null || {
+            if chown -R mysql:mysql "$MYSQL_DATA_DIR" "$LOGS_DIR" 2>/dev/null; then
+                echo "Successfully set ownership to mysql user"
+                MYSQL_USER="--user=mysql"
+            else
                 echo -e "${YELLOW}Warning: Could not change ownership to mysql user${NC}"
-            }
+                echo -e "${YELLOW}Running MySQL as root instead (common in containerized environments)${NC}"
+                # Explicitly use --user=root to prevent MySQL from trying to change ownership
+                MYSQL_USER="--user=root"
+            fi
+        else
+            echo -e "${YELLOW}Warning: mysql user does not exist${NC}"
+            echo -e "${YELLOW}Running MySQL as root instead${NC}"
+            # Explicitly use --user=root to prevent MySQL from trying to change ownership
+            MYSQL_USER="--user=root"
         fi
-        
-        MYSQL_USER="--user=mysql"
     else
         # Running as non-root user
         echo "Running as non-root user ($(whoami)), starting MySQL with current user..."
@@ -116,8 +126,9 @@ else
     fi
     
     # Start MySQL in background
+    # Use ${MYSQL_USER:+...} to only include the flag if set (avoids passing empty argument)
     mysqld \
-        $MYSQL_USER \
+        ${MYSQL_USER:+"$MYSQL_USER"} \
         --datadir="$MYSQL_DATA_DIR" \
         --port="$MYSQL_PORT" \
         --socket="$DATA_DIR/mysql.sock" \
@@ -210,11 +221,15 @@ else
                 echo -e "${YELLOW}Warning: Could not change ownership to elasticsearch user${NC}"
                 echo -e "${YELLOW}Starting Elasticsearch as root instead (common in containerized environments)${NC}"
                 # Start Elasticsearch directly if ownership change failed
+                # Export ES_JAVA_OPTS to allow running as root in containerized environments
+                export ES_JAVA_OPTS="-Des.insecure.allow.root=true"
                 "$ES_INSTALL_DIR/bin/elasticsearch" -d -p "$PIDS_DIR/elasticsearch.pid" \
                     >> "$LOGS_DIR/elasticsearch.log" 2>&1
             fi
         else
             # Start Elasticsearch directly if user creation failed
+            # Export ES_JAVA_OPTS to allow running as root in containerized environments
+            export ES_JAVA_OPTS="-Des.insecure.allow.root=true"
             "$ES_INSTALL_DIR/bin/elasticsearch" -d -p "$PIDS_DIR/elasticsearch.pid" \
                 >> "$LOGS_DIR/elasticsearch.log" 2>&1
         fi

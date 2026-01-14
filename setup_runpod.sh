@@ -129,20 +129,19 @@ if [ ! -d "$MYSQL_DATA_DIR/mysql" ]; then
             else
                 echo -e "${YELLOW}Warning: Could not change ownership to mysql user${NC}"
                 echo -e "${YELLOW}Running MySQL as root instead (common in containerized environments)${NC}"
+                # Explicitly use --user=root to prevent MySQL from trying to change ownership
+                MYSQL_USER_FLAG="--user=root"
             fi
         else
             echo -e "${YELLOW}Warning: mysql user does not exist${NC}"
             echo -e "${YELLOW}Running MySQL as root instead${NC}"
+            # Explicitly use --user=root to prevent MySQL from trying to change ownership
+            MYSQL_USER_FLAG="--user=root"
         fi
         
-        # Initialize with appropriate user flag
-        if [ -n "$MYSQL_USER_FLAG" ]; then
-            mysqld --initialize-insecure "$MYSQL_USER_FLAG" --datadir="$MYSQL_DATA_DIR" \
-                --log-error="$LOGS_DIR/mysql-init.log"
-        else
-            mysqld --initialize-insecure --datadir="$MYSQL_DATA_DIR" \
-                --log-error="$LOGS_DIR/mysql-init.log"
-        fi
+        # Initialize with the determined user flag
+        mysqld --initialize-insecure $MYSQL_USER_FLAG --datadir="$MYSQL_DATA_DIR" \
+            --log-error="$LOGS_DIR/mysql-init.log"
     else
         # Running as non-root user - use current user
         echo "Running as non-root user ($(whoami)), initializing MySQL with current user..."

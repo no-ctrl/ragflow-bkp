@@ -231,12 +231,6 @@ echo ""
 echo -e "${BLUE}Step 6: Setting up Python environment${NC}"
 echo ""
 
-# Install uv if not present
-if ! command -v uv &> /dev/null; then
-    echo "Installing uv package manager..."
-    pip install uv
-fi
-
 # Create virtual environment and install dependencies
 VENV_DIR="/opt/ragflow_venv"
 echo "Creating Python virtual environment at $VENV_DIR..."
@@ -248,8 +242,8 @@ if [ -d "$VENV_DIR" ]; then
 fi
 
 export UV_HTTP_TIMEOUT=300
-echo "Creating new virtual environment..."
-$SUDO uv venv "$VENV_DIR" --python 3.11
+echo "Creating new virtual environment using python3 -m venv..."
+$SUDO python3 -m venv "$VENV_DIR"
 
 echo "Installing uv into the virtual environment..."
 # Ensure the venv and pip exist before trying to use them

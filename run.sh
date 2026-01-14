@@ -25,6 +25,9 @@ echo ""
 echo "--> Preparing workspace and cloning repository..."
 echo ""
 
+# Save the current directory where the script is running
+START_DIR="$(pwd)"
+
 # Navigate to the working directory
 cd "${WORKDIR}"
 
@@ -41,6 +44,17 @@ git clone "${REPO_URL}"
 # Enter the repository directory
 cd "${REPO_NAME}"
 echo "Successfully cloned and entered the repository."
+
+# Copy setup scripts from the source directory to the repository
+echo "Copying setup scripts to repository..."
+cp "${START_DIR}/setup_runpod.sh" .
+cp "${START_DIR}/start_ragflow_runpod.sh" .
+cp "${START_DIR}/start_infrastructure_runpod.sh" .
+cp "${START_DIR}/stop_ragflow_runpod.sh" .
+cp "${START_DIR}/launch_backend_service.sh" .
+cp "${START_DIR}/setup_and_start_runpod.sh" .
+cp "${START_DIR}/download_deps.py" .
+chmod +x *.sh
 
 
 # --- Step 2: Run Setup Script ---

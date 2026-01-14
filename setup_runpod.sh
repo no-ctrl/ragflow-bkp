@@ -117,14 +117,26 @@ if [ ! -d "$MYSQL_DATA_DIR/mysql" ]; then
     
     # Detect if running as root or non-root user
     if [ "$(id -u)" = "0" ]; then
-        # Running as root - use mysql user for security
-        echo "Running as root, initializing MySQL with mysql user..."
+        # Running as root - try to use mysql user for security
+        echo "Running as root, attempting to initialize MySQL with mysql user..."
         
-        # Ensure mysql user owns the data directory
-        chown -R mysql:mysql "$MYSQL_DATA_DIR" "$LOGS_DIR"
+        # Try to change ownership to mysql user if it exists
+        MYSQL_USER_FLAG=""
+        if id -u mysql &>/dev/null; then
+            if chown -R mysql:mysql "$MYSQL_DATA_DIR" "$LOGS_DIR" 2>/dev/null; then
+                echo "Successfully set ownership to mysql user"
+                MYSQL_USER_FLAG="--user=mysql"
+            else
+                echo -e "${YELLOW}Warning: Could not change ownership to mysql user${NC}"
+                echo -e "${YELLOW}Running MySQL as root instead (common in containerized environments)${NC}"
+            fi
+        else
+            echo -e "${YELLOW}Warning: mysql user does not exist${NC}"
+            echo -e "${YELLOW}Running MySQL as root instead${NC}"
+        fi
         
-        # Initialize as mysql user with custom log file
-        mysqld --initialize-insecure --user=mysql --datadir="$MYSQL_DATA_DIR" \
+        # Initialize with appropriate user flag
+        mysqld --initialize-insecure $MYSQL_USER_FLAG --datadir="$MYSQL_DATA_DIR" \
             --log-error="$LOGS_DIR/mysql-init.log"
     else
         # Running as non-root user - use current user

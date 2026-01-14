@@ -188,6 +188,16 @@ After a pod restart:
 
 ## 🆘 Troubleshooting
 
+### Permission Warnings During Setup
+
+If you see warnings like:
+```
+Warning: Could not change ownership to mysql user
+Running MySQL as root instead (common in containerized environments)
+```
+
+This is **normal** in RunPod containers. The setup scripts automatically detect when ownership changes fail (common with mounted volumes) and safely run services as root instead. This doesn't affect functionality.
+
 ### Services Won't Start
 
 Check if ports are already in use:

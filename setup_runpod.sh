@@ -112,42 +112,24 @@ EOF
 if [ ! -d "$MYSQL_DATA_DIR/mysql" ]; then
     echo "Initializing MySQL data directory..."
     
-    # Ensure data directory exists and has proper permissions
+    # Ensure data directory exists
     mkdir -p "$MYSQL_DATA_DIR" "$LOGS_DIR"
     
     # Detect if running as root or non-root user
     if [ "$(id -u)" = "0" ]; then
-        # Running as root - try to use mysql user for security
-        echo "Running as root, attempting to initialize MySQL with mysql user..."
+        # Running as root in containerized environment (e.g., RunPod)
+        # Skip ownership changes and initialize directly as root
+        echo "Running as root (containerized environment)"
+        echo "Initializing MySQL with root user (no ownership changes)..."
         
-        # Try to change ownership to mysql user if it exists
-        MYSQL_USER_FLAG=""
-        if id -u mysql &>/dev/null; then
-            if chown -R mysql:mysql "$MYSQL_DATA_DIR" "$LOGS_DIR" 2>/dev/null; then
-                echo "Successfully set ownership to mysql user"
-                MYSQL_USER_FLAG="--user=mysql"
-            else
-                echo -e "${YELLOW}Warning: Could not change ownership to mysql user${NC}"
-                echo -e "${YELLOW}Running MySQL as root instead (common in containerized environments)${NC}"
-                # Explicitly use --user=root to prevent MySQL from trying to change ownership
-                MYSQL_USER_FLAG="--user=root"
-            fi
-        else
-            echo -e "${YELLOW}Warning: mysql user does not exist${NC}"
-            echo -e "${YELLOW}Running MySQL as root instead${NC}"
-            # Explicitly use --user=root to prevent MySQL from trying to change ownership
-            MYSQL_USER_FLAG="--user=root"
-        fi
-        
-        # Initialize with the determined user flag
-        # Use ${...:+...} to only include the flag when set (defensive programming)
-        mysqld --initialize-insecure ${MYSQL_USER_FLAG:+"$MYSQL_USER_FLAG"} --datadir="$MYSQL_DATA_DIR" \
+        # Initialize MySQL as root without attempting ownership changes
+        mysqld --initialize-insecure --user=root --datadir="$MYSQL_DATA_DIR" \
             --log-error="$LOGS_DIR/mysql-init.log"
     else
         # Running as non-root user - use current user
         echo "Running as non-root user ($(whoami)), initializing MySQL with current user..."
         
-        # Initialize without --user flag (uses current user) with custom log file
+        # Initialize without --user flag (uses current user)
         mysqld --initialize-insecure --datadir="$MYSQL_DATA_DIR" \
             --log-error="$LOGS_DIR/mysql-init.log"
     fi

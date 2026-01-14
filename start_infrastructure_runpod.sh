@@ -98,27 +98,11 @@ else
     
     # Determine which user to run MySQL as
     if [ "$(id -u)" = "0" ]; then
-        # Running as root - try to use mysql user for security
-        echo "Running as root, attempting to start MySQL with mysql user..."
-        
-        # Try to set ownership if mysql user exists
-        MYSQL_USER=""
-        if id -u mysql &>/dev/null; then
-            if chown -R mysql:mysql "$MYSQL_DATA_DIR" "$LOGS_DIR" 2>/dev/null; then
-                echo "Successfully set ownership to mysql user"
-                MYSQL_USER="--user=mysql"
-            else
-                echo -e "${YELLOW}Warning: Could not change ownership to mysql user${NC}"
-                echo -e "${YELLOW}Running MySQL as root instead (common in containerized environments)${NC}"
-                # Explicitly use --user=root to prevent MySQL from trying to change ownership
-                MYSQL_USER="--user=root"
-            fi
-        else
-            echo -e "${YELLOW}Warning: mysql user does not exist${NC}"
-            echo -e "${YELLOW}Running MySQL as root instead${NC}"
-            # Explicitly use --user=root to prevent MySQL from trying to change ownership
-            MYSQL_USER="--user=root"
-        fi
+        # Running as root in containerized environment (e.g., RunPod)
+        # Skip ownership changes and run directly as root
+        echo "Running as root (containerized environment)"
+        echo "Starting MySQL with root user (no ownership changes)..."
+        MYSQL_USER="--user=root"
     else
         # Running as non-root user
         echo "Running as non-root user ($(whoami)), starting MySQL with current user..."

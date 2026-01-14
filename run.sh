@@ -16,6 +16,9 @@ REPO_URL="https://github.com/infiniflow/ragflow.git"
 # The name of the repository directory
 REPO_NAME="ragflow"
 
+# Get the directory where this script is located
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 echo "================================================="
 echo "RAGFlow Automated Clone, Setup & Start for RunPod"
 echo "================================================="
@@ -42,6 +45,11 @@ git clone "${REPO_URL}"
 cd "${REPO_NAME}"
 echo "Successfully cloned and entered the repository."
 
+# Copy setup scripts from the source directory to the cloned repository
+# This ensures that any local modifications to the scripts are preserved and used
+echo "Copying local scripts to repository..."
+cp "${SCRIPT_DIR}"/*.sh .
+cp "${SCRIPT_DIR}"/download_deps.py . 2>/dev/null || true
 
 # --- Step 2: Run Setup Script ---
 echo ""

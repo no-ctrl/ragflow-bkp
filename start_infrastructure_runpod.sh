@@ -231,7 +231,25 @@ else
             >> "$LOGS_DIR/elasticsearch.log" 2>&1
     fi
     
-    wait_for_port $ES_PORT "Elasticsearch" 60
+    # Check max_map_count (common cause of ES failure)
+    if [ -f /proc/sys/vm/max_map_count ]; then
+        MAX_MAP_COUNT=$(cat /proc/sys/vm/max_map_count)
+        if [ "$MAX_MAP_COUNT" -lt 262144 ]; then
+            echo -e "${YELLOW}Warning: vm.max_map_count is $MAX_MAP_COUNT (recommended: 262144)${NC}"
+            echo -e "${YELLOW}Elasticsearch may fail to start.${NC}"
+            # Try to increase it (will likely fail in container, but worth a shot)
+            sysctl -w vm.max_map_count=262144 2>/dev/null || echo "Could not increase max_map_count"
+        fi
+    fi
+
+    if ! wait_for_port $ES_PORT "Elasticsearch" 60; then
+        echo -e "${RED}Elasticsearch failed to start.${NC}"
+        if [ -f "$LOGS_DIR/elasticsearch.log" ]; then
+             echo -e "${YELLOW}Last 50 lines of elasticsearch.log:${NC}"
+             tail -n 50 "$LOGS_DIR/elasticsearch.log"
+        fi
+        exit 1
+    fi
     
     # Set elastic password if needed using environment variable approach
     sleep 5

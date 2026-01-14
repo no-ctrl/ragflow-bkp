@@ -99,6 +99,14 @@ else
     # Determine which user to run MySQL as
     if [ "$(id -u)" = "0" ]; then
         # Running as root in containerized environment (e.g., RunPod)
+
+        # Fix: Remove default user=mysql from existing configs to avoid permission issues
+        # This prevents mysqld from trying to switch to 'mysql' user which fails on mounted volumes
+        if [ -d "/etc/mysql" ]; then
+            echo "Sanitizing MySQL configuration to allow running as root..."
+            find /etc/mysql -name "*.cnf" -exec sed -i 's/^user\s*=.*/#&/' {} + || true
+        fi
+
         # Skip ownership changes and run directly as root
         echo "Running as root (containerized environment)"
         echo "Starting MySQL with root user (no ownership changes)..."

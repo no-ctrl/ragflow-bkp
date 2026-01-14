@@ -115,8 +115,8 @@ for doc in "${docs[@]}"; do
     fi
 done
 
-# Check if CLAUDE.md mentions RunPod
-if grep -q "RunPod" "$SCRIPT_DIR/CLAUDE.md" 2>/dev/null; then
+# Check if CLAUDE.md mentions RunPod (case-insensitive)
+if grep -qi "runpod" "$SCRIPT_DIR/CLAUDE.md" 2>/dev/null; then
     record_check "PASS" "CLAUDE.md includes RunPod documentation"
 else
     record_check "WARN" "CLAUDE.md does not mention RunPod"
@@ -312,7 +312,7 @@ else
 fi
 
 # Check if .env.runpod.example includes password change instructions
-if grep -q -i "change\|secure" "$SCRIPT_DIR/.env.runpod.example" 2>/dev/null; then
+if grep -qi "security.*password\|change.*password\|production.*password" "$SCRIPT_DIR/.env.runpod.example" 2>/dev/null; then
     record_check "PASS" ".env.runpod.example includes security guidance"
 else
     record_check "WARN" ".env.runpod.example missing security guidance"
@@ -407,7 +407,7 @@ else
 fi
 
 # Check if system dependencies are documented
-if grep -q "mysql-server\|redis-server\|elasticsearch" "$SCRIPT_DIR/setup_runpod.sh" 2>/dev/null; then
+if grep -q "apt-get install\|mysql-server\|redis-server\|elasticsearch" "$SCRIPT_DIR/setup_runpod.sh" 2>/dev/null; then
     record_check "PASS" "System dependencies are installed by setup script"
 else
     record_check "WARN" "System dependencies installation not verified"
@@ -427,8 +427,13 @@ echo -e "${YELLOW}Warnings:${NC}     $WARNING_CHECKS"
 echo -e "${RED}Failed:${NC}       $FAILED_CHECKS"
 echo ""
 
-# Calculate pass percentage
-PASS_PERCENT=$((PASSED_CHECKS * 100 / TOTAL_CHECKS))
+# Calculate pass percentage (avoid division by zero)
+if [ $TOTAL_CHECKS -gt 0 ]; then
+    PASS_PERCENT=$((PASSED_CHECKS * 100 / TOTAL_CHECKS))
+else
+    PASS_PERCENT=0
+    echo -e "${RED}ERROR: No validation checks were executed!${NC}"
+fi
 echo -e "${CYAN}Pass Rate:${NC}    $PASS_PERCENT%"
 echo ""
 
@@ -453,6 +458,7 @@ if [ $WARNING_CHECKS -gt 0 ] || [ $FAILED_CHECKS -gt 0 ]; then
     echo -e "${CYAN}Recommendations:${NC}"
     echo ""
     
+    # Collect failed and warning results in separate passes for clarity
     if [ $FAILED_CHECKS -gt 0 ]; then
         echo -e "${RED}Critical Issues to Fix:${NC}"
         for result in "${RESULTS[@]}"; do

@@ -240,10 +240,23 @@ fi
 # Create virtual environment and install dependencies
 VENV_DIR="/opt/ragflow_venv"
 echo "Creating Python virtual environment at $VENV_DIR..."
+
+# Forcefully remove old environment to ensure a clean, non-interactive setup
+if [ -d "$VENV_DIR" ]; then
+    echo "Removing existing virtual environment at $VENV_DIR..."
+    $SUDO rm -rf "$VENV_DIR"
+fi
+
 export UV_HTTP_TIMEOUT=300
+echo "Creating new virtual environment..."
 $SUDO uv venv "$VENV_DIR" --python 3.11
 
 echo "Installing uv into the virtual environment..."
+# Ensure the venv and pip exist before trying to use them
+if [ ! -f "$VENV_DIR/bin/pip" ]; then
+    echo -e "${RED}Error: pip not found in virtual environment. Setup failed.${NC}"
+    exit 1
+fi
 $SUDO "$VENV_DIR/bin/pip" install uv
 
 echo "Installing Python dependencies..."

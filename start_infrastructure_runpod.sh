@@ -93,8 +93,24 @@ echo -e "${BLUE}Starting MySQL...${NC}"
 if check_port $MYSQL_PORT; then
     echo -e "${YELLOW}MySQL is already running on port $MYSQL_PORT${NC}"
 else
+    # Ensure data directory exists
+    mkdir -p "$MYSQL_DATA_DIR"
+    
+    # Determine which user to run MySQL as
+    if [ "$(id -u)" = "0" ]; then
+        # Running as root - use mysql user for security
+        echo "Running as root, starting MySQL with mysql user..."
+        chown -R mysql:mysql "$MYSQL_DATA_DIR" "$DATA_DIR/mysql.sock" "$PIDS_DIR/mysql.pid" 2>/dev/null || true
+        MYSQL_USER="--user=mysql"
+    else
+        # Running as non-root user
+        echo "Running as non-root user ($(whoami)), starting MySQL with current user..."
+        MYSQL_USER=""
+    fi
+    
     # Start MySQL in background
     mysqld \
+        $MYSQL_USER \
         --datadir="$MYSQL_DATA_DIR" \
         --port="$MYSQL_PORT" \
         --socket="$DATA_DIR/mysql.sock" \

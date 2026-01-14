@@ -263,10 +263,8 @@ echo ""
 echo -e "${BLUE}Step 7: Downloading additional dependencies${NC}"
 echo ""
 
-# Activate venv and download deps
-source "$VENV_DIR/bin/activate"
-python download_deps.py
-deactivate
+# Run download_deps.py using the virtual environment's Python
+"$VENV_DIR/bin/python" download_deps.py
 
 echo -e "${GREEN}✓ Additional dependencies downloaded${NC}"
 echo ""

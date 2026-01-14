@@ -107,7 +107,7 @@ else
     fi
     
     echo "Starting MySQL..."
-    mysqld --datadir="$MYSQL_TMP_DIR" --port="$MYSQL_PORT" \
+    mysqld --user=root --datadir="$MYSQL_TMP_DIR" --port="$MYSQL_PORT" \
            --socket="$DATA_DIR/mysql.sock" \
            --pid-file="$PIDS_DIR/mysql.pid" \
            --skip-networking=0 \

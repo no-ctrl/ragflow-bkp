@@ -34,9 +34,32 @@ git clone https://github.com/infiniflow/ragflow.git
 cd ragflow
 ```
 
-### 3. Run Setup
+### 3. One-Command Setup and Start (Recommended)
 
-The setup script will install all dependencies and configure services:
+**NEW:** For the easiest out-of-the-box experience, use the all-in-one script:
+
+```bash
+bash setup_and_start_runpod.sh
+```
+
+This single script will:
+- Install all system dependencies (MySQL, Redis, MinIO, Elasticsearch)
+- Set up Python environment with uv
+- Download required models and dependencies
+- Install frontend dependencies
+- Create configuration files
+- Start all infrastructure services with proper verification
+- Start the RAGFlow backend
+- Start the frontend development server
+- Verify GPU availability
+
+**Note:** This process takes 10-30 minutes depending on network speed.
+
+### Alternative: Two-Step Setup
+
+If you prefer to separate setup from startup, use the traditional approach:
+
+#### Step 3a: Run Setup
 
 ```bash
 bash setup_runpod.sh
@@ -51,7 +74,7 @@ This will:
 
 **Note:** This process takes 10-30 minutes depending on network speed.
 
-### 4. Start RAGFlow
+#### Step 3b: Start RAGFlow
 
 ```bash
 bash start_ragflow_runpod.sh
@@ -126,7 +149,8 @@ ANTHROPIC_API_KEY=sk-ant-xxxxxxxxxxxxx
 
 | Script | Description |
 |--------|-------------|
-| `setup_runpod.sh` | Initial setup (run once) |
+| `setup_and_start_runpod.sh` | **NEW:** All-in-one setup and start (recommended for first time) |
+| `setup_runpod.sh` | Initial setup only (run once) |
 | `start_ragflow_runpod.sh` | Start all services |
 | `stop_ragflow_runpod.sh` | Stop RAGFlow (keep infrastructure) |
 | `stop_ragflow_runpod.sh --stop-infra` | Stop everything |
@@ -304,7 +328,10 @@ For issues specific to the RunPod deployment:
 **Quick Reference:**
 
 ```bash
-# Start everything
+# One-command setup and start (first time)
+bash setup_and_start_runpod.sh
+
+# Or start everything (after setup)
 bash start_ragflow_runpod.sh
 
 # Stop RAGFlow only

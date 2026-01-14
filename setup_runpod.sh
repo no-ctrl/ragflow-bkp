@@ -82,9 +82,12 @@ $SUDO apt-get install -y \
     mysql-server \
     redis-server \
     default-jdk \
-    nodejs \
-    npm \
     unixodbc-dev
+
+# Install Node.js 20.x
+echo "Setting up Node.js 20.x repository..."
+curl -fsSL https://deb.nodesource.com/setup_20.x | $SUDO bash -
+$SUDO apt-get install -y nodejs
 
 echo -e "${GREEN}✓ System dependencies installed${NC}"
 echo ""

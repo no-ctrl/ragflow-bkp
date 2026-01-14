@@ -123,7 +123,17 @@ else
     # Set root password
     echo "Configuring MySQL..."
     sleep 2
-    MYSQL_PWD="" mysql -uroot -h 127.0.0.1 -P $MYSQL_PORT -e "ALTER USER 'root'@'localhost' IDENTIFIED BY '${MYSQL_PASSWORD}'; FLUSH PRIVILEGES;" 2>/dev/null || true
+    # Use a temporary config file to avoid password exposure in process list
+    MYSQL_CONFIG_FILE="/tmp/mysql_init_$$.cnf"
+    cat > "$MYSQL_CONFIG_FILE" <<EOF
+[client]
+user=root
+host=127.0.0.1
+port=$MYSQL_PORT
+EOF
+    chmod 600 "$MYSQL_CONFIG_FILE"
+    mysql --defaults-extra-file="$MYSQL_CONFIG_FILE" -e "ALTER USER 'root'@'localhost' IDENTIFIED BY '${MYSQL_PASSWORD}'; FLUSH PRIVILEGES;" 2>/dev/null || true
+    rm -f "$MYSQL_CONFIG_FILE"
     
     # Optional: backup snapshot to persistent volume
     mkdir -p "$MYSQL_BACKUP_DIR"

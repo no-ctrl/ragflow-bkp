@@ -113,7 +113,7 @@ if [ ! -d "$MYSQL_DATA_DIR/mysql" ]; then
     echo "Initializing MySQL data directory..."
     
     # Ensure data directory exists and has proper permissions
-    mkdir -p "$MYSQL_DATA_DIR"
+    mkdir -p "$MYSQL_DATA_DIR" "$LOGS_DIR"
     
     # Detect if running as root or non-root user
     if [ "$(id -u)" = "0" ]; then
@@ -121,17 +121,21 @@ if [ ! -d "$MYSQL_DATA_DIR/mysql" ]; then
         echo "Running as root, initializing MySQL with mysql user..."
         
         # Ensure mysql user owns the data directory
-        chown -R mysql:mysql "$MYSQL_DATA_DIR"
+        chown -R mysql:mysql "$MYSQL_DATA_DIR" "$LOGS_DIR"
         
-        # Initialize as mysql user
-        mysqld --initialize-insecure --user=mysql --datadir="$MYSQL_DATA_DIR"
+        # Initialize as mysql user with custom log file
+        mysqld --initialize-insecure --user=mysql --datadir="$MYSQL_DATA_DIR" \
+            --log-error="$LOGS_DIR/mysql-init.log"
     else
         # Running as non-root user - use current user
         echo "Running as non-root user ($(whoami)), initializing MySQL with current user..."
         
-        # Initialize without --user flag (uses current user)
-        mysqld --initialize-insecure --datadir="$MYSQL_DATA_DIR"
+        # Initialize without --user flag (uses current user) with custom log file
+        mysqld --initialize-insecure --datadir="$MYSQL_DATA_DIR" \
+            --log-error="$LOGS_DIR/mysql-init.log"
     fi
+    
+    echo "MySQL initialization log: $LOGS_DIR/mysql-init.log"
 fi
 
 echo -e "${GREEN}✓ MySQL configured${NC}"

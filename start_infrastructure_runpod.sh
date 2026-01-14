@@ -100,7 +100,7 @@ else
     if [ "$(id -u)" = "0" ]; then
         # Running as root - use mysql user for security
         echo "Running as root, starting MySQL with mysql user..."
-        chown -R mysql:mysql "$MYSQL_DATA_DIR" "$DATA_DIR/mysql.sock" "$PIDS_DIR/mysql.pid" 2>/dev/null || true
+        chown -R mysql:mysql "$MYSQL_DATA_DIR" "$LOGS_DIR" 2>/dev/null || true
         MYSQL_USER="--user=mysql"
     else
         # Running as non-root user
@@ -115,7 +115,8 @@ else
         --port="$MYSQL_PORT" \
         --socket="$DATA_DIR/mysql.sock" \
         --pid-file="$PIDS_DIR/mysql.pid" \
-        >> "$LOGS_DIR/mysql.log" 2>&1 &
+        --log-error="$LOGS_DIR/mysql.log" \
+        >> "$LOGS_DIR/mysql-stdout.log" 2>&1 &
     
     echo $! > "$PIDS_DIR/mysql.pid"
     

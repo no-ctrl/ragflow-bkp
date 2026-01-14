@@ -100,7 +100,14 @@ else
     if [ "$(id -u)" = "0" ]; then
         # Running as root - use mysql user for security
         echo "Running as root, starting MySQL with mysql user..."
-        chown -R mysql:mysql "$MYSQL_DATA_DIR" "$LOGS_DIR" 2>/dev/null || true
+        
+        # Set ownership if mysql user exists
+        if id -u mysql &>/dev/null; then
+            chown -R mysql:mysql "$MYSQL_DATA_DIR" "$LOGS_DIR" 2>/dev/null || {
+                echo -e "${YELLOW}Warning: Could not change ownership to mysql user${NC}"
+            }
+        fi
+        
         MYSQL_USER="--user=mysql"
     else
         # Running as non-root user

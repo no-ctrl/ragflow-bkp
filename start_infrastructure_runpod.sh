@@ -126,8 +126,9 @@ else
     fi
     
     # Start MySQL in background
+    # Use ${MYSQL_USER:+...} to only include the flag if set (avoids passing empty argument)
     mysqld \
-        $MYSQL_USER \
+        ${MYSQL_USER:+"$MYSQL_USER"} \
         --datadir="$MYSQL_DATA_DIR" \
         --port="$MYSQL_PORT" \
         --socket="$DATA_DIR/mysql.sock" \

@@ -93,6 +93,14 @@ wait_for_port() {
 echo ""
 echo -e "${BLUE}Step 1: Setting up MySQL${NC}"
 
+# Fix: Remove default user=mysql from existing configs to avoid permission issues
+# This prevents mysqld from trying to switch to 'mysql' user which fails on mounted volumes
+# (Even though we use /tmp, mysqld reads /etc/mysql and might try to switch users)
+if [ "$(id -u)" = "0" ] && [ -d "/etc/mysql" ]; then
+    echo "Sanitizing MySQL configuration to allow running as root..."
+    find /etc/mysql -name "*.cnf" -exec sed -i 's/^user\s*=.*/#&/' {} + || true
+fi
+
 MYSQL_TMP_DIR="/tmp/ragflow-mysql"
 mkdir -p "$MYSQL_TMP_DIR"
 

@@ -95,8 +95,17 @@ echo ""
 
 # Configure MySQL to use custom data directory and port
 $SUDO mkdir -p /etc/mysql/mysql.conf.d
+
+# Fix: Remove default user=mysql from existing configs to avoid permission issues when running as root
+# This prevents mysqld from trying to switch to 'mysql' user which fails on mounted volumes
+if [ -d "/etc/mysql" ]; then
+    echo "Sanitizing MySQL configuration to allow running as root..."
+    $SUDO find /etc/mysql -name "*.cnf" -exec sed -i 's/^user\s*=.*/#&/' {} + || true
+fi
+
 $SUDO tee /etc/mysql/mysql.conf.d/ragflow.cnf > /dev/null <<EOF
 [mysqld]
+user = root
 datadir = ${MYSQL_DATA_DIR}
 port = ${MYSQL_PORT}
 max_connections = 1000
@@ -106,6 +115,7 @@ collation-server = utf8mb4_unicode_ci
 skip-host-cache
 skip-name-resolve
 bind-address = 127.0.0.1
+innodb_use_native_aio = 0
 EOF
 
 # Initialize MySQL if data directory is empty

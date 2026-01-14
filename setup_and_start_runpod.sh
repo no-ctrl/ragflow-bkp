@@ -123,7 +123,7 @@ else
     # Set root password
     echo "Configuring MySQL..."
     sleep 2
-    mysql -uroot -h 127.0.0.1 -P $MYSQL_PORT -e "ALTER USER 'root'@'localhost' IDENTIFIED BY '${MYSQL_PASSWORD}'; FLUSH PRIVILEGES;" 2>/dev/null || true
+    MYSQL_PWD="" mysql -uroot -h 127.0.0.1 -P $MYSQL_PORT -e "ALTER USER 'root'@'localhost' IDENTIFIED BY '${MYSQL_PASSWORD}'; FLUSH PRIVILEGES;" 2>/dev/null || true
     
     # Optional: backup snapshot to persistent volume
     mkdir -p "$MYSQL_BACKUP_DIR"
@@ -265,7 +265,7 @@ else
     # Set elastic password
     echo "Configuring Elasticsearch password..."
     sleep 5
-    "$ES_INSTALL_DIR/bin/elasticsearch-reset-password" -u elastic -i -b << ESPASS || true
+    "$ES_INSTALL_DIR/bin/elasticsearch-reset-password" -u elastic -i -b << 'ESPASS' || true
 $ES_PASSWORD
 $ES_PASSWORD
 ESPASS
@@ -369,7 +369,7 @@ echo ""
 SERVICES_OK=true
 
 # Check MySQL
-if mysql -u root -p"${MYSQL_PASSWORD}" -h 127.0.0.1 -P $MYSQL_PORT -e "SELECT 1" >/dev/null 2>&1; then
+if MYSQL_PWD="${MYSQL_PASSWORD}" mysql -u root -h 127.0.0.1 -P $MYSQL_PORT -e "SELECT 1" >/dev/null 2>&1; then
     echo -e "${GREEN}✓ MySQL is accessible${NC}"
 else
     echo -e "${RED}✗ MySQL connection failed${NC}"
@@ -377,7 +377,7 @@ else
 fi
 
 # Check Redis
-if redis-cli -p $REDIS_PORT -a "$REDIS_PASSWORD" ping 2>/dev/null | grep -q PONG; then
+if REDISCLI_AUTH="$REDIS_PASSWORD" redis-cli -p $REDIS_PORT ping 2>/dev/null | grep -q PONG; then
     echo -e "${GREEN}✓ Redis is accessible${NC}"
 else
     echo -e "${RED}✗ Redis connection failed${NC}"
@@ -503,7 +503,7 @@ if command -v nvidia-smi &> /dev/null; then
     echo ""
     
     # Check CUDA availability in Python
-    CUDA_AVAILABLE=$(source "$SCRIPT_DIR/.venv/bin/activate" && python -c "import torch; print(torch.cuda.is_available())" 2>/dev/null || echo "false")
+    CUDA_AVAILABLE=$("$SCRIPT_DIR/.venv/bin/python" -c "import torch; print(torch.cuda.is_available())" 2>/dev/null || echo "false")
     if [ "$CUDA_AVAILABLE" = "True" ]; then
         echo -e "${GREEN}✓ PyTorch CUDA is available${NC}"
     else

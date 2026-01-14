@@ -28,8 +28,10 @@ This guide explains how to deploy and run RAGFlow on [RunPod](https://runpod.io)
 
 Connect to your pod via web terminal or SSH, then:
 
+It is recommended to clone the repository to local storage (e.g., `/root`) for better performance, while keeping data on the persistent volume (`/workspace`).
+
 ```bash
-cd /workspace
+cd /root
 git clone https://github.com/infiniflow/ragflow.git
 cd ragflow
 ```
@@ -97,13 +99,13 @@ In RunPod, you can find the access URLs in your pod's "Connect" menu.
 ## 📁 Directory Structure
 
 ```
-/workspace/
-├── ragflow/                  # Application code
-│   ├── .venv/               # Python virtual environment
-│   ├── logs/                # Application logs
-│   ├── web/                 # Frontend source
-│   └── ...
-└── ragflow-data/            # Persistent data (on volume)
+/root/ragflow/               # Application code (on local storage)
+├── .venv/                   # Python virtual environment
+├── logs/                    # Application logs
+├── web/                     # Frontend source
+└── ...
+
+/workspace/ragflow-data/     # Persistent data (on network volume)
     ├── mysql/               # MySQL data
     ├── redis/               # Redis data
     ├── minio/               # Object storage

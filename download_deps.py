@@ -47,8 +47,8 @@ repos = [
     "maidalun1020/bce-embedding-base_v1",
 ]
 
-def download_model(repo_id):
-    local_dir = os.path.abspath(os.path.join("huggingface.co", repo_id))
+def download_model(repo_id, model_dir):
+    local_dir = os.path.abspath(os.path.join(model_dir, repo_id))
     os.makedirs(local_dir, exist_ok=True)
     snapshot_download(repo_id=repo_id, local_dir=local_dir)
 
@@ -56,22 +56,33 @@ def download_model(repo_id):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Download dependencies with optional China mirror support')
     parser.add_argument('--china-mirrors', action='store_true', help='Use China-accessible mirrors for downloads')
+    parser.add_argument('--model-dir', default='huggingface.co', help='Directory to download HuggingFace models')
+    parser.add_argument('--nltk-dir', default='nltk_data', help='Directory to download NLTK data')
+    parser.add_argument('--deps-dir', default='.', help='Directory to download other dependencies')
     args = parser.parse_args()
     
+    # Create directories if they don't exist
+    os.makedirs(args.model_dir, exist_ok=True)
+    os.makedirs(args.nltk_dir, exist_ok=True)
+    os.makedirs(args.deps_dir, exist_ok=True)
+
     urls = get_urls(args.china_mirrors)
     
     for url in urls:
         download_url = url[0] if isinstance(url, list) else url
         filename = url[1] if isinstance(url, list) else url.split("/")[-1]
-        print(f"Downloading {filename} from {download_url}...")
-        if not os.path.exists(filename):
-            urllib.request.urlretrieve(download_url, filename)
+        filepath = os.path.join(args.deps_dir, filename)
+        print(f"Downloading {filename} from {download_url} to {filepath}...")
+        if not os.path.exists(filepath):
+            urllib.request.urlretrieve(download_url, filepath)
 
-    local_dir = os.path.abspath('nltk_data')
+    print(f"Downloading NLTK data to {args.nltk_dir}...")
+    local_nltk_dir = os.path.abspath(args.nltk_dir)
     for data in ['wordnet', 'punkt', 'punkt_tab']:
         print(f"Downloading nltk {data}...")
-        nltk.download(data, download_dir=local_dir)
+        nltk.download(data, download_dir=local_nltk_dir)
 
+    print(f"Downloading HuggingFace models to {args.model_dir}...")
     for repo_id in repos:
         print(f"Downloading huggingface repo {repo_id}...")
-        download_model(repo_id)
+        download_model(repo_id, args.model_dir)

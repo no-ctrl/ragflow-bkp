@@ -59,7 +59,21 @@ STOP=false
 PIDS=()
 
 # Set the path to the NLTK data directory
-export NLTK_DATA="./nltk_data"
+# Prioritize env var if set (e.g. from .env)
+if [ -z "${NLTK_DATA:-}" ]; then
+    export NLTK_DATA="./nltk_data"
+else
+    export NLTK_DATA="$NLTK_DATA"
+fi
+
+# Export other dependencies if they are set in .env
+if [ -n "${TIKTOKEN_CACHE_DIR:-}" ]; then
+    export TIKTOKEN_CACHE_DIR="$TIKTOKEN_CACHE_DIR"
+fi
+
+if [ -n "${TIKA_SERVER_JAR:-}" ]; then
+    export TIKA_SERVER_JAR="$TIKA_SERVER_JAR"
+fi
 
 # Function to handle termination signals
 cleanup() {

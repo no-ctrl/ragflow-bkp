@@ -275,8 +275,27 @@ echo ""
 echo -e "${BLUE}Step 7: Downloading additional dependencies${NC}"
 echo ""
 
+# Create local directories for dependencies
+LOCAL_DEPS_DIR="/opt/ragflow/deps"
+LOCAL_HF_DIR="/opt/ragflow/huggingface"
+LOCAL_NLTK_DIR="/opt/ragflow/nltk"
+
+$SUDO mkdir -p "$LOCAL_DEPS_DIR" "$LOCAL_HF_DIR" "$LOCAL_NLTK_DIR"
+
 # Download deps using uv run to ensure script dependencies are met
-$SUDO "$VENV_DIR/bin/uv" run download_deps.py
+# We download to local directories to optimize performance
+$SUDO "$VENV_DIR/bin/uv" run download_deps.py \
+    --model-dir "$LOCAL_HF_DIR" \
+    --nltk-dir "$LOCAL_NLTK_DIR" \
+    --deps-dir "$LOCAL_DEPS_DIR"
+
+# Ensure the application can find the HuggingFace models
+# The app looks in ~/.ragflow by default
+RAGFLOW_HOME="/root/.ragflow"
+if [ ! -d "$RAGFLOW_HOME" ]; then
+    $SUDO mkdir -p "$(dirname "$RAGFLOW_HOME")"
+    $SUDO ln -s "$LOCAL_HF_DIR" "$RAGFLOW_HOME"
+fi
 
 echo -e "${GREEN}✓ Additional dependencies downloaded${NC}"
 echo ""
@@ -333,6 +352,11 @@ DATA_DIR=${DATA_DIR}
 
 # Number of task executor workers
 WS=1
+
+# Local Dependencies
+NLTK_DATA=/opt/ragflow/nltk
+TIKTOKEN_CACHE_DIR=/opt/ragflow/deps
+TIKA_SERVER_JAR=/opt/ragflow/deps/tika-server-standard-3.0.0.jar
 EOF
 
 echo -e "${GREEN}✓ Environment configuration created${NC}"

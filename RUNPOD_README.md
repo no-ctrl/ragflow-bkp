@@ -24,8 +24,10 @@ This directory contains a **production-ready** RunPod deployment setup for RAGFl
 
 ### One-Command Deployment
 
+For best performance, clone the repository to local storage (`/root`) while keeping data on persistent storage (`/workspace`).
+
 ```bash
-cd /workspace
+cd /root
 git clone https://github.com/infiniflow/ragflow.git
 cd ragflow
 bash setup_and_start_runpod.sh
@@ -282,16 +284,16 @@ nano /workspace/ragflow-data/elasticsearch-bin/config/jvm.options.d/heap.options
 ## 🚦 Deployment Workflow
 
 ### First-Time Setup
-1. Clone repository to `/workspace`
+1. Clone repository to `/root` (recommended for performance) or `/workspace`
 2. Run `bash setup_and_start_runpod.sh`
 3. Wait 10-30 minutes for installation
 4. Access at http://localhost:9222
 5. Create account and configure LLM
 
 ### After Pod Restart
-1. Navigate to `/workspace/ragflow`
+1. Navigate to `/root/ragflow` (or where you cloned it)
 2. Run `bash setup_and_start_runpod.sh`
-3. Services resume from persistent data
+3. Services resume from persistent data (stored in `/workspace/ragflow-data`)
 4. Access at http://localhost:9222
 
 ### Daily Operations

@@ -9,11 +9,12 @@ set -e
 
 # --- Configuration ---
 # The directory where the repository will be cloned
-WORKDIR="/workspace"
+# Use local storage (/root) for better performance than network volume (/workspace)
+WORKDIR="/root"
 # The URL of the repository to clone
-REPO_URL="https://github.com/no-ctrl/ragflow-bkp"
+REPO_URL="https://github.com/infiniflow/ragflow.git"
 # The name of the repository directory
-REPO_NAME="ragflow-bkp"
+REPO_NAME="ragflow"
 
 echo "================================================="
 echo "RAGFlow Automated Clone, Setup & Start for RunPod"

@@ -243,6 +243,9 @@ echo "Creating Python virtual environment at $VENV_DIR..."
 export UV_HTTP_TIMEOUT=300
 $SUDO uv venv "$VENV_DIR" --python 3.11
 
+echo "Installing uv into the virtual environment..."
+$SUDO "$VENV_DIR/bin/pip" install uv
+
 echo "Installing Python dependencies..."
 $SUDO "$VENV_DIR/bin/uv" sync --all-extras
 

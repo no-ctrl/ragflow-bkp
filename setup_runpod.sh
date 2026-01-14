@@ -136,8 +136,13 @@ if [ ! -d "$MYSQL_DATA_DIR/mysql" ]; then
         fi
         
         # Initialize with appropriate user flag
-        mysqld --initialize-insecure $MYSQL_USER_FLAG --datadir="$MYSQL_DATA_DIR" \
-            --log-error="$LOGS_DIR/mysql-init.log"
+        if [ -n "$MYSQL_USER_FLAG" ]; then
+            mysqld --initialize-insecure "$MYSQL_USER_FLAG" --datadir="$MYSQL_DATA_DIR" \
+                --log-error="$LOGS_DIR/mysql-init.log"
+        else
+            mysqld --initialize-insecure --datadir="$MYSQL_DATA_DIR" \
+                --log-error="$LOGS_DIR/mysql-init.log"
+        fi
     else
         # Running as non-root user - use current user
         echo "Running as non-root user ($(whoami)), initializing MySQL with current user..."

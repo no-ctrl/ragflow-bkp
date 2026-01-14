@@ -122,9 +122,11 @@ echo ""
 echo -e "${BLUE}Step 3: Preparing Python environment${NC}"
 echo ""
 
+VENV_DIR="/opt/ragflow_venv"
+
 # Check if virtual environment exists
-if [ ! -d "$SCRIPT_DIR/.venv" ]; then
-    echo -e "${RED}Virtual environment not found at $SCRIPT_DIR/.venv${NC}"
+if [ ! -d "$VENV_DIR" ]; then
+    echo -e "${RED}Virtual environment not found at $VENV_DIR${NC}"
     echo "Please run setup_runpod.sh first"
     exit 1
 fi
@@ -164,7 +166,7 @@ if [ "$BACKEND_ALREADY_RUNNING" = false ]; then
     
     # Start backend in background
     (
-        source .venv/bin/activate
+        source "$VENV_DIR/bin/activate"
         export PYTHONPATH="$SCRIPT_DIR"
         bash launch_backend_service.sh >> "$SCRIPT_DIR/logs/ragflow_server.log" 2>&1
     ) &
@@ -252,10 +254,10 @@ if command -v nvidia-smi &> /dev/null; then
     echo ""
     
     # Check CUDA availability in Python (using subshell to avoid affecting main script)
-    CUDA_AVAILABLE=$(source "$SCRIPT_DIR/.venv/bin/activate" && python -c "import torch; print(torch.cuda.is_available())" 2>/dev/null || echo "false")
+    CUDA_AVAILABLE=$(source "$VENV_DIR/bin/activate" && python -c "import torch; print(torch.cuda.is_available())" 2>/dev/null || echo "false")
     if [ "$CUDA_AVAILABLE" = "True" ]; then
         echo -e "${GREEN}✓ PyTorch CUDA is available${NC}"
-        CUDA_DEVICE=$(source "$SCRIPT_DIR/.venv/bin/activate" && python -c "import torch; print(torch.cuda.get_device_name(0))" 2>/dev/null || echo "Unknown")
+        CUDA_DEVICE=$(source "$VENV_DIR/bin/activate" && python -c "import torch; print(torch.cuda.get_device_name(0))" 2>/dev/null || echo "Unknown")
         echo -e "  Device: $CUDA_DEVICE"
     else
         echo -e "${YELLOW}⚠ PyTorch CUDA is not available${NC}"

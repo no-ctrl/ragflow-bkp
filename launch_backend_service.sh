@@ -24,6 +24,17 @@ load_env_file() {
 # Load environment variables
 load_env_file
 
+# Activate virtual environment if not already active
+VENV_DIR="/opt/ragflow_venv"
+if [ -z "$VIRTUAL_ENV" ] && [ -f "$VENV_DIR/bin/activate" ]; then
+    echo "Activating Python virtual environment from $VENV_DIR"
+    source "$VENV_DIR/bin/activate"
+elif [ -n "$VIRTUAL_ENV" ]; then
+    echo "Virtual environment already active: $VIRTUAL_ENV"
+else
+    echo "Warning: Python virtual environment not found at $VENV_DIR. Using system Python."
+fi
+
 # Unset HTTP proxies that might be set by Docker daemon
 export http_proxy=""; export https_proxy=""; export no_proxy=""; export HTTP_PROXY=""; export HTTPS_PROXY=""; export NO_PROXY=""
 export PYTHONPATH=$(pwd)

@@ -238,12 +238,13 @@ if ! command -v uv &> /dev/null; then
 fi
 
 # Create virtual environment and install dependencies
-echo "Creating Python virtual environment..."
+VENV_DIR="/opt/ragflow_venv"
+echo "Creating Python virtual environment at $VENV_DIR..."
 export UV_HTTP_TIMEOUT=300
-uv venv --python 3.11 --allow-existing
+$SUDO uv venv "$VENV_DIR" --python 3.11
 
 echo "Installing Python dependencies..."
-uv sync --all-extras
+$SUDO "$VENV_DIR/bin/uv" sync --all-extras
 
 echo -e "${GREEN}✓ Python environment ready${NC}"
 echo ""
@@ -253,8 +254,9 @@ echo -e "${BLUE}Step 7: Downloading additional dependencies${NC}"
 echo ""
 
 # Activate venv and download deps
-source .venv/bin/activate
+source "$VENV_DIR/bin/activate"
 python download_deps.py
+deactivate
 
 echo -e "${GREEN}✓ Additional dependencies downloaded${NC}"
 echo ""
@@ -264,6 +266,16 @@ echo -e "${BLUE}Step 8: Setting up frontend${NC}"
 echo ""
 
 cd "$SCRIPT_DIR/web"
+
+# Create a directory for node_modules on the local disk
+NODE_MODULES_DIR="/opt/ragflow_node_modules"
+echo "Creating Node.js modules directory at $NODE_MODULES_DIR"
+$SUDO mkdir -p "$NODE_MODULES_DIR"
+
+# Create a symbolic link to the local directory
+if [ ! -L "node_modules" ]; then
+    ln -s "$NODE_MODULES_DIR" "node_modules"
+fi
 
 # Install npm dependencies
 npm install

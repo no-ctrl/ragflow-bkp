@@ -221,16 +221,16 @@ else
                 echo -e "${YELLOW}Warning: Could not change ownership to elasticsearch user${NC}"
                 echo -e "${YELLOW}Starting Elasticsearch as root instead (common in containerized environments)${NC}"
                 # Start Elasticsearch directly if ownership change failed
-                # ES_JAVA_OPTS allows running as root when needed
-                ES_JAVA_OPTS="-Des.insecure.allow.root=true" \
-                    "$ES_INSTALL_DIR/bin/elasticsearch" -d -p "$PIDS_DIR/elasticsearch.pid" \
+                # Export ES_JAVA_OPTS to allow running as root in containerized environments
+                export ES_JAVA_OPTS="-Des.insecure.allow.root=true"
+                "$ES_INSTALL_DIR/bin/elasticsearch" -d -p "$PIDS_DIR/elasticsearch.pid" \
                     >> "$LOGS_DIR/elasticsearch.log" 2>&1
             fi
         else
             # Start Elasticsearch directly if user creation failed
-            # ES_JAVA_OPTS allows running as root when needed
-            ES_JAVA_OPTS="-Des.insecure.allow.root=true" \
-                "$ES_INSTALL_DIR/bin/elasticsearch" -d -p "$PIDS_DIR/elasticsearch.pid" \
+            # Export ES_JAVA_OPTS to allow running as root in containerized environments
+            export ES_JAVA_OPTS="-Des.insecure.allow.root=true"
+            "$ES_INSTALL_DIR/bin/elasticsearch" -d -p "$PIDS_DIR/elasticsearch.pid" \
                 >> "$LOGS_DIR/elasticsearch.log" 2>&1
         fi
     else

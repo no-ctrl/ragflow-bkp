@@ -167,13 +167,26 @@ else
     
     # Create a non-root user for Elasticsearch if running as root
     if [ "$(id -u)" = "0" ]; then
-        # Create elasticsearch user if not exists
-        id -u elasticsearch &>/dev/null || useradd -r -s /bin/false elasticsearch
-        chown -R elasticsearch:elasticsearch "$ES_INSTALL_DIR" "$ES_DATA_DIR" "$LOGS_DIR/elasticsearch"
+        # Create elasticsearch user if not exists (required for ES security)
+        if ! id -u elasticsearch &>/dev/null; then
+            echo "Creating elasticsearch system user..."
+            useradd -r -s /bin/false elasticsearch 2>/dev/null || {
+                echo -e "${YELLOW}Warning: Could not create elasticsearch user, using root${NC}"
+            }
+        fi
         
-        # Start Elasticsearch as elasticsearch user
-        su elasticsearch -s /bin/bash -c "$ES_INSTALL_DIR/bin/elasticsearch -d -p $PIDS_DIR/elasticsearch.pid" \
-            >> "$LOGS_DIR/elasticsearch.log" 2>&1
+        # Set ownership if user exists
+        if id -u elasticsearch &>/dev/null; then
+            chown -R elasticsearch:elasticsearch "$ES_INSTALL_DIR" "$ES_DATA_DIR" "$LOGS_DIR/elasticsearch"
+            
+            # Start Elasticsearch as elasticsearch user
+            su elasticsearch -s /bin/bash -c "$ES_INSTALL_DIR/bin/elasticsearch -d -p $PIDS_DIR/elasticsearch.pid" \
+                >> "$LOGS_DIR/elasticsearch.log" 2>&1
+        else
+            # Start Elasticsearch directly if user creation failed
+            "$ES_INSTALL_DIR/bin/elasticsearch" -d -p "$PIDS_DIR/elasticsearch.pid" \
+                >> "$LOGS_DIR/elasticsearch.log" 2>&1
+        fi
     else
         # Start Elasticsearch directly
         "$ES_INSTALL_DIR/bin/elasticsearch" -d -p "$PIDS_DIR/elasticsearch.pid" \
@@ -182,13 +195,15 @@ else
     
     wait_for_port $ES_PORT "Elasticsearch" 60
     
-    # Set elastic password if needed
+    # Set elastic password if needed using environment variable approach
     sleep 5
     echo "Setting Elasticsearch password..."
-    "$ES_INSTALL_DIR/bin/elasticsearch-reset-password" -u elastic -i -b <<EOF 2>/dev/null || true
-${ES_PASSWORD}
-${ES_PASSWORD}
-EOF
+    # Use non-interactive mode with auto-generated password first, then change it
+    ES_BOOTSTRAP_PASSWORD="$ES_PASSWORD" "$ES_INSTALL_DIR/bin/elasticsearch-reset-password" \
+        -u elastic -i -b -f 2>/dev/null << ESPASS || true
+$ES_PASSWORD
+$ES_PASSWORD
+ESPASS
 fi
 
 # ==================== Verify Services ====================

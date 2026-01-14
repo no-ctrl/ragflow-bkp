@@ -251,12 +251,11 @@ if command -v nvidia-smi &> /dev/null; then
     nvidia-smi --query-gpu=name,memory.total,memory.used,memory.free,utilization.gpu --format=csv
     echo ""
     
-    # Check CUDA availability in Python
-    source "$SCRIPT_DIR/.venv/bin/activate"
-    CUDA_AVAILABLE=$(python -c "import torch; print(torch.cuda.is_available())" 2>/dev/null || echo "false")
+    # Check CUDA availability in Python (using subshell to avoid affecting main script)
+    CUDA_AVAILABLE=$(source "$SCRIPT_DIR/.venv/bin/activate" && python -c "import torch; print(torch.cuda.is_available())" 2>/dev/null || echo "false")
     if [ "$CUDA_AVAILABLE" = "True" ]; then
         echo -e "${GREEN}✓ PyTorch CUDA is available${NC}"
-        CUDA_DEVICE=$(python -c "import torch; print(torch.cuda.get_device_name(0))" 2>/dev/null || echo "Unknown")
+        CUDA_DEVICE=$(source "$SCRIPT_DIR/.venv/bin/activate" && python -c "import torch; print(torch.cuda.get_device_name(0))" 2>/dev/null || echo "Unknown")
         echo -e "  Device: $CUDA_DEVICE"
     else
         echo -e "${YELLOW}⚠ PyTorch CUDA is not available${NC}"

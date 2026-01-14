@@ -7,7 +7,7 @@
 # without requiring sudo (runs as root in RunPod containers).
 #
 
-set -e
+set -euo pipefail
 
 # Colors for output
 RED='\033[0;31m'

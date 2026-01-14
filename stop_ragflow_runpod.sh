@@ -32,6 +32,22 @@ fi
 DATA_DIR="${DATA_DIR:-${RUNPOD_VOLUME_PATH:-/workspace}/ragflow-data}"
 PIDS_DIR="$DATA_DIR/pids"
 
+# Function to stop a service by PID file
+stop_service_by_pid() {
+    local service_name=$1
+    local pid_file="$PIDS_DIR/${2:-$service_name}.pid"
+    
+    if [ -f "$pid_file" ]; then
+        local pid
+        pid=$(cat "$pid_file")
+        if kill -0 "$pid" 2>/dev/null; then
+            kill "$pid" 2>/dev/null || true
+            echo -e "${GREEN}✓ $service_name stopped${NC}"
+        fi
+        rm -f "$pid_file"
+    fi
+}
+
 # Stop backend processes
 echo -e "${BLUE}Stopping backend services...${NC}"
 
@@ -103,45 +119,11 @@ STOP_INFRA="${1:-}"
 if [ "$STOP_INFRA" = "--stop-infra" ] || [ "$STOP_INFRA" = "-s" ]; then
     echo -e "${BLUE}Stopping infrastructure services...${NC}"
     
-    # Stop MySQL
-    if [ -f "$PIDS_DIR/mysql.pid" ]; then
-        PID=$(cat "$PIDS_DIR/mysql.pid")
-        if kill -0 "$PID" 2>/dev/null; then
-            kill "$PID" 2>/dev/null || true
-            echo -e "${GREEN}✓ MySQL stopped${NC}"
-        fi
-        rm -f "$PIDS_DIR/mysql.pid"
-    fi
-    
-    # Stop Redis
-    if [ -f "$PIDS_DIR/redis.pid" ]; then
-        PID=$(cat "$PIDS_DIR/redis.pid")
-        if kill -0 "$PID" 2>/dev/null; then
-            kill "$PID" 2>/dev/null || true
-            echo -e "${GREEN}✓ Redis stopped${NC}"
-        fi
-        rm -f "$PIDS_DIR/redis.pid"
-    fi
-    
-    # Stop MinIO
-    if [ -f "$PIDS_DIR/minio.pid" ]; then
-        PID=$(cat "$PIDS_DIR/minio.pid")
-        if kill -0 "$PID" 2>/dev/null; then
-            kill "$PID" 2>/dev/null || true
-            echo -e "${GREEN}✓ MinIO stopped${NC}"
-        fi
-        rm -f "$PIDS_DIR/minio.pid"
-    fi
-    
-    # Stop Elasticsearch
-    if [ -f "$PIDS_DIR/elasticsearch.pid" ]; then
-        PID=$(cat "$PIDS_DIR/elasticsearch.pid")
-        if kill -0 "$PID" 2>/dev/null; then
-            kill "$PID" 2>/dev/null || true
-            echo -e "${GREEN}✓ Elasticsearch stopped${NC}"
-        fi
-        rm -f "$PIDS_DIR/elasticsearch.pid"
-    fi
+    # Stop all infrastructure services using helper function
+    stop_service_by_pid "MySQL" "mysql"
+    stop_service_by_pid "Redis" "redis"
+    stop_service_by_pid "MinIO" "minio"
+    stop_service_by_pid "Elasticsearch" "elasticsearch"
     
     echo ""
     echo -e "${GREEN}All infrastructure services stopped${NC}"

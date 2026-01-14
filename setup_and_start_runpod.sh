@@ -4,6 +4,14 @@
 # This script performs BOTH setup AND startup in one go - ready to use out of the box
 # Image: runpod/pytorch:2.4.0-py3.11-cuda12.4.1-devel-ubuntu22.04
 #
+# KEY IMPROVEMENTS OVER BASIC SETUP:
+# - Properly exports MINIO_ROOT_USER and MINIO_ROOT_PASSWORD before starting MinIO
+# - Uses wait_for_port() to verify each service actually starts (not just sleep)
+# - Includes comprehensive error handling with clear error messages
+# - Idempotent: safe to re-run, skips already running services
+# - Full logging to $DATA_DIR/logs/ for troubleshooting
+# - Service health verification after startup
+#
 
 set -euo pipefail
 

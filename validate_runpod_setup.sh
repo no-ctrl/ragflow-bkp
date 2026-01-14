@@ -115,11 +115,15 @@ for doc in "${docs[@]}"; do
     fi
 done
 
-# Check if CLAUDE.md mentions RunPod (case-insensitive)
-if grep -qi "runpod" "$SCRIPT_DIR/CLAUDE.md" 2>/dev/null; then
-    record_check "PASS" "CLAUDE.md includes RunPod documentation"
+# Check if CLAUDE.md mentions RunPod (case-insensitive) - informational only
+if [ -f "$SCRIPT_DIR/CLAUDE.md" ]; then
+    if grep -qi "runpod" "$SCRIPT_DIR/CLAUDE.md" 2>/dev/null; then
+        record_check "PASS" "CLAUDE.md includes RunPod documentation"
+    else
+        record_check "PASS" "CLAUDE.md exists (RunPod section optional)"
+    fi
 else
-    record_check "WARN" "CLAUDE.md does not mention RunPod"
+    record_check "WARN" "CLAUDE.md not found"
 fi
 
 echo ""

@@ -236,7 +236,8 @@ fi
 
 # Create virtual environment and install dependencies
 echo "Creating Python virtual environment..."
-uv venv --python 3.11
+export UV_HTTP_TIMEOUT=300
+uv venv --python 3.11 --allow-existing
 
 echo "Installing Python dependencies..."
 uv sync --all-extras

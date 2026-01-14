@@ -305,13 +305,19 @@ if [ ! -d "$SCRIPT_DIR/.venv" ]; then
     echo "Creating Python virtual environment..."
     uv venv --python 3.11
     
+    # Patch pyproject.toml to remove Aliyun mirror for RunPod
+    if grep -q "mirrors.aliyun.com" pyproject.toml; then
+        echo "Removing Aliyun mirror from pyproject.toml..."
+        cp pyproject.toml pyproject.toml.bak
+        sed -i '/\[\[tool.uv.index\]\]/d' pyproject.toml
+        sed -i '/url = "https:\/\/mirrors.aliyun.com\/pypi\/simple"/d' pyproject.toml
+    fi
+
     echo "Installing Python dependencies (this may take a while)..."
     uv sync --all-extras
     
     echo "Downloading additional dependencies..."
-    source .venv/bin/activate
-    python download_deps.py
-    deactivate
+    uv run download_deps.py
 else
     echo -e "${GREEN}Virtual environment already exists${NC}"
 fi

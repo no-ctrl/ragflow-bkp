@@ -254,6 +254,18 @@ fi
 $SUDO "$VENV_DIR/bin/pip" install uv
 
 echo "Installing Python dependencies..."
+
+# Patch pyproject.toml to remove Aliyun mirror for RunPod (to ensure reliable downloads)
+if grep -q "mirrors.aliyun.com" pyproject.toml; then
+    echo "Removing Aliyun mirror from pyproject.toml for RunPod..."
+    # Backup the original file
+    cp pyproject.toml pyproject.toml.bak
+    # Remove the tool.uv.index section and the url line
+    # Using sed to delete the lines containing the mirror config
+    sed -i '/\[\[tool.uv.index\]\]/d' pyproject.toml
+    sed -i '/url = "https:\/\/mirrors.aliyun.com\/pypi\/simple"/d' pyproject.toml
+fi
+
 $SUDO "$VENV_DIR/bin/uv" sync --all-extras
 
 echo -e "${GREEN}✓ Python environment ready${NC}"
@@ -263,10 +275,8 @@ echo ""
 echo -e "${BLUE}Step 7: Downloading additional dependencies${NC}"
 echo ""
 
-# Activate venv and download deps
-source "$VENV_DIR/bin/activate"
-python download_deps.py
-deactivate
+# Download deps using uv run to ensure script dependencies are met
+$SUDO "$VENV_DIR/bin/uv" run download_deps.py
 
 echo -e "${GREEN}✓ Additional dependencies downloaded${NC}"
 echo ""

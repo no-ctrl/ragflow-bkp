@@ -7,7 +7,7 @@ index 10c5433..90f7696 100644
  var import_plugin_utils = require("umi/plugin-utils");
  var CHECK_INTERVAL = 300;
 -var CHECK_TIMEOUT_UNIT_SECOND = 5;
-+var CHECK_TIMEOUT_UNIT_SECOND = 120;
++var CHECK_TIMEOUT_UNIT_SECOND = 300;
  var tailwindcss_default = (api) => {
    api.describe({
      key: "tailwindcss",

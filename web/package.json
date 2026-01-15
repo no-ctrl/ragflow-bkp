@@ -4,7 +4,7 @@
   "scripts": {
     "build": "umi build",
     "dev": "cross-env UMI_DEV_SERVER_COMPRESS=none umi dev",
-    "postinstall": "patch-package && umi setup",
+    "postinstall": "patch-package && node scripts/update_umi_timeout.js && umi setup",
     "lint": "umi lint --eslint-only",
     "prepare": "cd .. && husky web/.husky",
     "setup": "umi setup",

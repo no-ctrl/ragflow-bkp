@@ -43,11 +43,17 @@ mkdir -p "$LOGS_DIR" "$PIDS_DIR" "$SCRIPT_DIR/logs"
 # Function to check if a port is in use
 check_port() {
     local port=$1
+    # Try lsof first
     if lsof -Pi :$port -sTCP:LISTEN -t >/dev/null 2>&1; then
         return 0
-    else
-        return 1
     fi
+
+    # Fallback to python (more reliable in some containers)
+    if python3 -c "import socket; s = socket.socket(socket.AF_INET, socket.SOCK_STREAM); result = s.connect_ex(('127.0.0.1', int($port))); s.close(); exit(result)" 2>/dev/null; then
+        return 0
+    fi
+
+    return 1
 }
 
 # ==================== Step 1: Start Infrastructure ====================

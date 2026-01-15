@@ -264,9 +264,19 @@ if grep -q "mirrors.aliyun.com" pyproject.toml; then
     # Using sed to delete the lines containing the mirror config
     sed -i '/\[\[tool.uv.index\]\]/d' pyproject.toml
     sed -i '/url = "https:\/\/mirrors.aliyun.com\/pypi\/simple"/d' pyproject.toml
+
+    # Also remove uv.lock if it exists to prevent using Aliyun mirrors from the lockfile
+    # This forces uv to resolve dependencies again using the default PyPI
+    if [ -f "uv.lock" ]; then
+        echo "Removing uv.lock to ensure clean resolution without Aliyun mirrors..."
+        rm uv.lock
+    fi
 fi
 
-$SUDO "$VENV_DIR/bin/uv" sync --all-extras
+# We need to set VIRTUAL_ENV and use --active to ensure uv installs into our custom venv location
+# instead of creating a new .venv in the current directory
+export VIRTUAL_ENV="$VENV_DIR"
+$SUDO "$VENV_DIR/bin/uv" sync --active --all-extras
 
 echo -e "${GREEN}✓ Python environment ready${NC}"
 echo ""

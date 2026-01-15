@@ -139,12 +139,24 @@ else
     wait_for_port $MYSQL_PORT "MySQL"
     
     # Set root password and create database if needed
+    # We use the socket for initial connection because:
+    # 1. mysqld --initialize creates 'root'@'localhost' (socket only)
+    # 2. skip-name-resolve is enabled, so TCP from 127.0.0.1 doesn't match 'localhost'
     sleep 2
-    if mysql -u root -h 127.0.0.1 -P $MYSQL_PORT -e "SELECT 1" 2>/dev/null; then
+    if mysql -u root -S "$DATA_DIR/mysql.sock" -e "SELECT 1" 2>/dev/null; then
         echo "Setting MySQL root password..."
-        mysql -u root -h 127.0.0.1 -P $MYSQL_PORT -e "ALTER USER 'root'@'localhost' IDENTIFIED BY '${MYSQL_PASSWORD}';" 2>/dev/null || true
-        mysql -u root -p"${MYSQL_PASSWORD}" -h 127.0.0.1 -P $MYSQL_PORT -e "CREATE DATABASE IF NOT EXISTS rag_flow CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;" 2>/dev/null || true
+        # Set password for localhost access (via socket)
+        mysql -u root -S "$DATA_DIR/mysql.sock" -e "ALTER USER 'root'@'localhost' IDENTIFIED BY '${MYSQL_PASSWORD}';" 2>/dev/null || true
+
+        # Create user for TCP access (127.0.0.1) which is needed for the backend
+        # Using the now-set password for localhost connection to create the new user
+        mysql -u root -S "$DATA_DIR/mysql.sock" -p"${MYSQL_PASSWORD}" -e "CREATE USER IF NOT EXISTS 'root'@'127.0.0.1' IDENTIFIED BY '${MYSQL_PASSWORD}';" 2>/dev/null || true
+        mysql -u root -S "$DATA_DIR/mysql.sock" -p"${MYSQL_PASSWORD}" -e "GRANT ALL PRIVILEGES ON *.* TO 'root'@'127.0.0.1' WITH GRANT OPTION;" 2>/dev/null || true
+        mysql -u root -S "$DATA_DIR/mysql.sock" -p"${MYSQL_PASSWORD}" -e "FLUSH PRIVILEGES;" 2>/dev/null || true
     fi
+
+    # Ensure database exists (using socket is more reliable for admin tasks)
+    mysql -u root -S "$DATA_DIR/mysql.sock" -p"${MYSQL_PASSWORD}" -e "CREATE DATABASE IF NOT EXISTS rag_flow CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;" 2>/dev/null || true
 fi
 
 # ==================== Start Redis ====================
@@ -287,6 +299,8 @@ if mysql -u root -p"${MYSQL_PASSWORD}" -h 127.0.0.1 -P $MYSQL_PORT -e "SELECT 1"
     echo -e "${GREEN}✓ MySQL is accessible${NC}"
 else
     echo -e "${RED}✗ MySQL connection failed${NC}"
+    # Try to print the error to help debugging
+    mysql -u root -p"${MYSQL_PASSWORD}" -h 127.0.0.1 -P $MYSQL_PORT -e "SELECT 1" || true
     SERVICES_OK=false
 fi
 
